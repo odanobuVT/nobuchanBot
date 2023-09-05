@@ -1,8 +1,8 @@
 import discord
 from discord.ext import commands
 import os #getenvに必須
-from dotenv import load_dotenv
-load_dotenv()
+#from dotenv import load_dotenv
+#load_dotenv()
 #from keep_alive import keep_alive
 
 prefix = ['!', '?']
