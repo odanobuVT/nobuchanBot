@@ -1,12 +1,6 @@
 FROM python:3.11
-USER root
-
-WORKDIR /app
-COPY . /app
-
-RUN pip install --upgrade -r /app/requirements.txt # pythonのライブラリはrequirements.txtに記述します。
-
-RUN apt-get update # ffmpegをビルド済みバイナリでinstallします。
-RUN apt-get install -y ffmpeg
-
-CMD ["python", "main.py"]
+WORKDIR /bot
+COPY requirements.txt /bot/
+RUN pip install -r requirements.txt
+COPY . /bot
+CMD python main.py
