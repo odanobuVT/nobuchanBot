@@ -139,7 +139,7 @@ class Schedule(commands.Cog, name = 'スケジュール'):
         "mh8": h8.strftime(s_format)#,
         #"i2": i2.strftime(s_format)
       })
-      data[str(ctx.channel.id)]["status"].update({"i1": i1.strftime(s_format)})
+      #data[str(ctx.channel.id)]["status"].update({"i1": i1.strftime(s_format)})
       print("data add:Complete")
       with open("mid-eve_data.json", 'w') as f:
         json.dump(data, f, indent=2, ensure_ascii = False)
@@ -170,7 +170,7 @@ class Schedule(commands.Cog, name = 'スケジュール'):
     debug_txt = f"デバッグ用。※納品物では表示されません"
     #await ctx.send(debug_txt, embed=embed)
 
-  @commands.hybrid_command(name = "小規模イベント(謎解き)作成", aliases = ["小イベ", "small_event"])
+  @commands.hybrid_command(name = "小規模イベント-謎解き-作成", aliases = ["小イベ", "small_event"])
   @discord.app_commands.rename(
     ticket = "チケット販売開始日",
     honban = "イベント本番日",
@@ -269,7 +269,7 @@ class Schedule(commands.Cog, name = 'スケジュール'):
         "sh8": h8.strftime(s_format)#,
         #"i2": i2.strftime(s_format)
       })
-      data[str(ctx.channel.id)]["status"].update({"i1": i1.strftime(s_format)})
+      #data[str(ctx.channel.id)]["status"].update({"i1": i1.strftime(s_format)})
       print("data add:Complete")
       with open("small-eve_data.json", 'w') as f:
         json.dump(data, f, indent=2, ensure_ascii = False)
