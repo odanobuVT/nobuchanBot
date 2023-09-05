@@ -339,7 +339,7 @@ class Schedule(commands.Cog, name = 'スケジュール'):
     memo
       自由文を入力
     """
-    with open("data.json", 'r') as f:
+    with open("mid-eve_data.json", 'r') as f:
       data = json.load(f)
     if str(ctx.channel.id) not in data:
       embed = discord.Embed(
@@ -368,16 +368,16 @@ class Schedule(commands.Cog, name = 'スケジュール'):
       ctx.channel.id
     )].update(ch_data)
     print("data add:Complete")
-    with open("data.json", 'w') as f:
+    with open("mid-eve_data.json", 'w') as f:
       json.dump(data, f, indent=2, ensure_ascii = False)
     status = data[str(ctx.channel.id)]["status"]
     time = data[str(ctx.channel.id)]["time"]
     desc = (
-      f'チケット販売日：{status["set_ticket"]}\nイベント本番日：{status["set_honban"]\n}'
+      f'チケット販売日：{status["set_ticket"]}\nイベント本番日：{status["set_honban"]}\n'
       #f'\n{status["i1"]}　【新規絵提出期限】\n{time["i2"]}　【新規絵提出リマインド】'
       f'\n【新規絵提出期限】{status["illust"]}\n【公演時間】{status["performance_time"]}'
       f'\n【サムネイル製作】{status["thumbnail"]}\n【告知用画像製作】{status["announce"]}'
-      f'\n【ポスター製作】{status["poster"]}\n【グッズ製作】\n{status["merch"]}'
+      f'\n【ポスター製作】{status["poster"]}\n【グッズ製作】{status["merch"]}'
       f'\n\n【メモ】\n{status["memo"]}'
     )
     embed = discord.Embed(
@@ -587,7 +587,7 @@ class Schedule(commands.Cog, name = 'スケジュール'):
     self, ctx: commands.Context,
     ):
     """進捗を確認します"""
-    with open("data.json", 'r') as f:
+    with open("mid-eve_data.json", 'r') as f:
       data = json.load(f)
     if str(ctx.channel.id) not in data:
       embed = discord.Embed(
@@ -599,11 +599,11 @@ class Schedule(commands.Cog, name = 'スケジュール'):
     status = data[str(ctx.channel.id)]["status"]
     time = data[str(ctx.channel.id)]["time"]
     desc = (
-      f'チケット販売日：{status["set_ticket"]}\nイベント本番日：{status["set_honban"]\n}'
+      f'チケット販売日：{status["set_ticket"]}\nイベント本番日：{status["set_honban"]}\n'
       #f'\n{status["i1"]}　【新規絵提出期限】\n{time["i2"]}　【新規絵提出リマインド】'
       f'\n【新規絵提出期限】{status["illust"]}\n【公演時間】{status["performance_time"]}'
       f'\n【サムネイル製作】{status["thumbnail"]}\n【告知用画像製作】{status["announce"]}'
-      f'\n【ポスター製作】{status["poster"]}\n【グッズ製作】\n{status["merch"]}'
+      f'\n【ポスター製作】{status["poster"]}\n【グッズ製作】{status["merch"]}'
       f'\n\n【メモ】\n{status["memo"]}'
     )
     embed = discord.Embed(
