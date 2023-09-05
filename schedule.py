@@ -302,7 +302,7 @@ class Schedule(commands.Cog, name = 'スケジュール'):
 
   @commands.hybrid_command(name = "進捗入力", aliases = ["進捗", "progress"])
   @discord.app_commands.rename(
-    illust = "演者様新規絵提出",
+    illust = "新規絵提出期限",
     performance_time = "公演時間",
     thumbnail = "サムネイル製作",
     announce = "告知用画像製作",
@@ -373,9 +373,9 @@ class Schedule(commands.Cog, name = 'スケジュール'):
     status = data[str(ctx.channel.id)]["status"]
     time = data[str(ctx.channel.id)]["time"]
     desc = (
-      f'チケット販売日：{status["set_ticket"]}\nイベント本番日：{status["set_honban"]}'
-      f'\n\n{status["i1"]}　【新規絵提出期限】\n{time["i2"]}　【新規絵提出リマインド】'
-      f'\n【演者様新規絵提出】{status["illust"]}\n【公演時間】{status["performance_time"]}'
+      f'チケット販売日：{status["set_ticket"]}\nイベント本番日：{status["set_honban"]\n}'
+      #f'\n{status["i1"]}　【新規絵提出期限】\n{time["i2"]}　【新規絵提出リマインド】'
+      f'\n【新規絵提出期限】{status["illust"]}\n【公演時間】{status["performance_time"]}'
       f'\n【サムネイル製作】{status["thumbnail"]}\n【告知用画像製作】{status["announce"]}'
       f'\n【ポスター製作】{status["poster"]}\n【グッズ製作】\n{status["merch"]}'
       f'\n\n【メモ】\n{status["memo"]}'
@@ -504,45 +504,83 @@ class Schedule(commands.Cog, name = 'スケジュール'):
     self, ctx: commands.Context,
     ):
     """リマインド日時を確認します"""
-    with open("data.json", 'r') as f:
+    with open("mid-eve_data.json", 'r') as f:
       data = json.load(f)
     if str(ctx.channel.id) not in data:
-      embed = discord.Embed(
-        title = f"このチャンネルにリマインドは無いよ！",
+      mid_embed = discord.Embed(
+        title = f"このチャンネルに中規模イベントのリマインドは無いよ！",
         color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
       )
-      return await ctx.send(embed = embed, ephemeral = True)
-    ch_data = data[str(ctx.channel.id)]
-    if not ch_data["user"] == ctx.author.id:
+      mid_ch_user = ctx.author.id
+    else:
+      mid_ch_data = data[str(ctx.channel.id)]
+      GUILD_ID = mid_ch_data["guild"]
+      use_guild = self.bot.get_guild(GUILD_ID)
+      ROLE_ID = mid_ch_data["role"]
+      role = use_guild.get_role(ROLE_ID)
+      status = mid_ch_data["status"]
+      time = mid_ch_data["time"]
+      mid_ch_user = mid_ch_data["user"]
+      desc = (
+        f'**{role.name}　へお知らせ予定**\n'
+        f'チケット販売日：{status["set_ticket"]}'
+        f'\n{time["mt1"]}　【チケット販売開始1週間前アナウンス】\n{time["mt2"]}　【チケット販売開始3日前アナウンス】\n{time["mt3"]}　【チケット販売開始当日アナウンス】'
+        f'\n\nイベント本番日：{status["set_honban"]}'
+        f'\n{time["mh1"]}　【チケット販売終了1週間前アナウンス】\n{time["mh2"]}　【チケット販売終了日アナウンス】'
+        f'\n{time["mh3"]}　【最終打ち合わせについてのご連絡】\n{time["mh4"]}　【イベント本番！】'
+        f'\n{time["mh5"]}　【イベント後の流れ】\n{time["mh6"]}　【後日販売直前アナウンス】'
+        f'\n{time["mh7"]}　【後日販売終了日アナウンス】\n{time["mh8"]}　【イベント終了告知】'
+        #f'\n{status["i1"]}　【新規絵提出期限】\n{time["i2"]}　【新規絵提出リマインド】'
+      )
+      mid_embed = discord.Embed(
+        title = f"こちらは中規模イベント対象の演者様です",
+        description = desc,
+        color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
+      )
+    with open("small-eve_data.json", 'r') as f:
+      data = json.load(f)
+    if str(ctx.channel.id) not in data:
+      small_embed = discord.Embed(
+        title = f"このチャンネルに小規模（謎解き）イベントのリマインドは無いよ！",
+        color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
+      )
+      small_ch_user = ctx.author.id
+    else:
+      small_ch_data = data[str(ctx.channel.id)]
+      GUILD_ID = small_ch_data["guild"]
+      use_guild = self.bot.get_guild(GUILD_ID)
+      ROLE_ID = small_ch_data["role"]
+      role = use_guild.get_role(ROLE_ID)
+      status = small_ch_data["status"]
+      time = small_ch_data["time"]
+      small_ch_user = small_ch_data["user"]
+      desc = (
+        f'**{role.name}　へお知らせ予定**\n'
+        f'チケット販売日：{status["set_ticket"]}'
+        f'\n{time["st1"]}　【チケット販売開始1週間前アナウンス】\n{time["st2"]}　【チケット販売開始3日前アナウンス】\n{time["st3"]}　【チケット販売開始当日アナウンス】'
+        f'\n\nイベント本番日：{status["set_honban"]}'
+        f'\n{time["sh1"]}　【チケット販売終了1週間前アナウンス】\n{time["sh2"]}　【チケット販売終了日アナウンス】'
+        f'\n{time["sh3"]}　【最終打ち合わせについてのご連絡】\n{time["sh4"]}　【イベント本番！】'
+        f'\n{time["sh5"]}　【イベント後の流れ】\n{time["sh6"]}　【後日販売直前アナウンス】'
+        f'\n{time["sh7"]}　【後日販売終了日アナウンス】\n{time["sh8"]}　【イベント終了告知】'
+        #f'\n{status["i1"]}　【新規絵提出期限】\n{time["i2"]}　【新規絵提出リマインド】'
+      )
+      small_embed = discord.Embed(
+        title = f"こちらは小規模イベント対象の演者様です",
+        description = desc,
+        color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
+      )
+    if not mid_ch_user == ctx.author.id and not small_ch_user == ctx.author.id:
       embed = discord.Embed(
         title = "ごめんなさい！こちらのコマンドを使用することは出来ません🤖💦",
         color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
       )
       return await ctx.send(embed = embed, ephemeral = True)
-    GUILD_ID = ch_data["guild"]
-    use_guild = self.bot.get_guild(GUILD_ID)
-    ROLE_ID = ch_data["role"]
-    role = use_guild.get_role(ROLE_ID)
-    status = ch_data["status"]
-    time = ch_data["time"]
-    desc = (
-      f'チケット販売日：{status["set_ticket"]}'
-      f'\n{time["t1"]}　【チケット販売開始2日前アナウンス】\n{time["t2"]}　【チケット販売開始当日アナウンス】'
-      f'\n\nイベント本番日：{status["set_honban"]}'
-      f'\n{time["h1"]}　【チケット販売終了1週間前アナウンス】\n{time["h2"]}　【チケット販売終了日アナウンス】'
-      f'\n{time["h3"]}　【最終打ち合わせについてのご連絡】\n{time["h4"]}　【イベント本番！】'
-      f'\n{time["h5"]}　【イベント後の流れ】\n{time["h6"]}　【後日販売直前アナウンス】'
-      f'\n{time["h7"]}　【後日販売終了日アナウンス】\n{time["h8"]}　【イベント終了告知】'
-      f'\n{status["i1"]}　【新規絵提出期限】\n{time["i2"]}　【新規絵提出リマインド】'
-    )
-    embed = discord.Embed(
-      title = f"{role.name}　へお知らせ予定",
-      description = desc,
-      color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
-    )
-    await ctx.send(embed = embed, ephemeral = True)
+    await ctx.send(embed = mid_embed, ephemeral = True)
+    await ctx.send(embed = small_embed, ephemeral = True)
     debug_txt = f"デバッグ用。※納品物では表示されません"
-    #await ctx.send(debug_txt, embed=embed)
+    #await ctx.send(debug_txt, embed = mid_embed)
+    #await ctx.send(debug_txt, embed = small_embed)
     
   @commands.hybrid_command(name = "進捗確認", aliases = ["進捗かくにん", "progress_conf"])
   async def confirm_progress(
@@ -561,9 +599,9 @@ class Schedule(commands.Cog, name = 'スケジュール'):
     status = data[str(ctx.channel.id)]["status"]
     time = data[str(ctx.channel.id)]["time"]
     desc = (
-      f'チケット販売日：{status["set_ticket"]}\nイベント本番日：{status["set_honban"]}'
-      f'\n\n{status["i1"]}　【新規絵提出期限】\n{time["i2"]}　【新規絵提出リマインド】'
-      f'\n【演者様新規絵提出】{status["illust"]}\n【公演時間】{status["performance_time"]}'
+      f'チケット販売日：{status["set_ticket"]}\nイベント本番日：{status["set_honban"]\n}'
+      #f'\n{status["i1"]}　【新規絵提出期限】\n{time["i2"]}　【新規絵提出リマインド】'
+      f'\n【新規絵提出期限】{status["illust"]}\n【公演時間】{status["performance_time"]}'
       f'\n【サムネイル製作】{status["thumbnail"]}\n【告知用画像製作】{status["announce"]}'
       f'\n【ポスター製作】{status["poster"]}\n【グッズ製作】\n{status["merch"]}'
       f'\n\n【メモ】\n{status["memo"]}'
