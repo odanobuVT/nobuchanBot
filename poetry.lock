@@ -1,0 +1,27 @@
+[[package]]
+name = "discord"
+version = "2.1.0"
+description = "A mirror package for discord.py. Please install that instead."
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+"discord.py" = ">=2.1.0"
+
+[[package]]
+name = "discord.py"
+version = "2.1.0"
+description = "A Python wrapper for the Discord API"
+category = "main"
+optional = false
+python-versions = ">=3.9.0"
+
+[[package]]
+name = "flask"
+version = "2.2.2"
+description = "A simple framework for building complex web applications."
+category = "main"
+optional = false
+python-versions = ">=3.9"
+
