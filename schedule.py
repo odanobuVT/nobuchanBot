@@ -40,8 +40,9 @@ class Schedule(commands.Cog, name = 'スケジュール'):
     else:
       return True
   
-  @commands.hybrid_command(name = "中規模イベント作成", aliases = ["中イベ", "mid_event"])
+  @commands.hybrid_command(name = "イベント作成", aliases = ["イベ", "event"])
   @discord.app_commands.rename(
+    kibo = "規模",
     ticket = "チケット販売開始日",
     honban = "イベント本番日",
     role = "ロール",
@@ -49,15 +50,18 @@ class Schedule(commands.Cog, name = 'スケジュール'):
   )
   async def set_mid_event(
     self, ctx: commands.Context,
+    kibo: typing.Literal["中規模","小規模（謎解き）"],
     ticket: str,
     honban: str,
     role: discord.Role,
     jibun: typing.Literal["はい","いいえ"]
   ):
-    """中規模イベントのリマインドを設定します。チャンネル毎に使い直してください
+    """イベントのリマインドを設定します。チャンネル毎に使い直してください
     
     Parameters
     -----------
+    kibo
+      中規模イベントか小規模（謎解き）イベントかを選択
     ticket
       6桁の数字で入力（全半角混在可、スペース入り可。その他のノイズ文字は不可）
     honban
@@ -69,82 +73,87 @@ class Schedule(commands.Cog, name = 'スケジュール'):
     """
     ticket_str = unicodedata.normalize('NFKC', ticket).replace(' ', '')
     honban_str = unicodedata.normalize('NFKC', honban).replace(' ', '')
+    if not len(ticket_str) == len(honban_str) == 6:
+      embed = discord.Embed(
+        title = f"{role.name}　へお知らせ\n自分に通知：{jibun}",
+        description = f'エラーだよ。年月日は6桁の数字だよ！',
+        color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
+       )
+      return await ctx.send(embed = embed, ephemeral = True)
     if jibun == "はい":
       notic_to_me = True
     else:
       notic_to_me = False
-    if len(ticket_str) == len(honban_str) == 6:
-      with open("mid-eve_data.json", 'r') as f:
-        data = json.load(f)
-      data.update({
-        str(ctx.channel.id): {
-          "role": role.id,
-          "guild": ctx.guild.id,
-          "user": ctx.author.id,
-          "notic_to_me": notic_to_me,
-          "time": {},
-          "status": {}
-        }
-      })
-      print("mid-event data update:Complete")
-      ticket_time = ticket_str[:2] + "/" + ticket_str[2:4] + "/" + ticket_str[4:6]
-      honban_time = honban_str[:2] + "/" + honban_str[2:4] + "/" + honban_str[4:6]
-      data[str(ctx.channel.id)]["status"].update({
-        "set_ticket": ticket_time,
-        "set_honban": honban_time,
-        "illust": "NO"
-      })
-      print("time conv:Complete")
-      delta_t1 = datetime.timedelta(days=6, hours=15)
-      delta_t2 = datetime.timedelta(days=2, hours=15)
-      delta_t3 = datetime.timedelta(hours=9)
-      delta_h1 = datetime.timedelta(days=13, hours=15)
-      delta_h2 = datetime.timedelta(days=6, hours=15)
-      delta_h3 = datetime.timedelta(days=5, hours=15)
-      delta_h4 = datetime.timedelta(hours=9)
-      delta_h5 = datetime.timedelta(hours=20, minutes=30)
-      delta_h6 = datetime.timedelta(days=1, hours=19)
-      delta_h7 = datetime.timedelta(days=4, hours=9)
-      delta_h8 = datetime.timedelta(days=5, hours=9)
-      #delta_i1 = datetime.timedelta(days=19, hours=12)
-      #delta_i2 = datetime.timedelta(days=29, hours=15)
-      s_format = '%y/%m/%d %H:%M'
-      s_format2 = '%y/%m/%d'
-      ticket_date = datetime.datetime.strptime(ticket_time, s_format2)
-      honban_date = datetime.datetime.strptime(honban_time, s_format2)
-      t1 = ticket_date - delta_t1
-      t2 = ticket_date - delta_t2
-      t3 = ticket_date + delta_t3
-      h1 = honban_date - delta_h1
-      h2 = honban_date - delta_h2
-      h3 = honban_date - delta_h3
-      h4 = honban_date + delta_h4
-      h5 = honban_date + delta_h5
-      h6 = honban_date + delta_h6
-      h7 = honban_date + delta_h7
-      h8 = honban_date + delta_h8
-      #i1 = honban_date - delta_i1
-      #i2 = honban_date - delta_i2
-      data[str(ctx.channel.id)]["time"].update({
-        "mt1": t1.strftime(s_format),
-        "mt2": t2.strftime(s_format),
-        "mt3": t3.strftime(s_format),
-        "mh1": h1.strftime(s_format),
-        "mh2": h2.strftime(s_format),
-        "mh3": h3.strftime(s_format),
-        "mh4": h4.strftime(s_format),
-        "mh5": h5.strftime(s_format),
-        "mh6": h6.strftime(s_format),
-        "mh7": h7.strftime(s_format),
-        "mh8": h8.strftime(s_format)#,
-        #"i2": i2.strftime(s_format)
-      })
-      #data[str(ctx.channel.id)]["status"].update({"i1": i1.strftime(s_format)})
-      print("data add:Complete")
-      with open("mid-eve_data.json", 'w') as f:
-        json.dump(data, f, indent=2, ensure_ascii = False)
-      status = data[str(ctx.channel.id)]["status"]
-      time = data[str(ctx.channel.id)]["time"]
+    if kibo == "中規模":
+      jdata = "mid-eve_data.json"
+      kibo = "m"
+    elif kibo == "小規模（謎解き）":
+      jdata = "small-eve_data.json"
+      kibo = "s"
+    with open(jdata, 'r') as f:
+      data = json.load(f)
+    data.update({
+      str(ctx.channel.id): {
+        "role": role.id,
+        "guild": ctx.guild.id,
+        "user": ctx.author.id,
+        "notic_to_me": notic_to_me,
+        "time": {},
+        "status": {}
+      }
+    })
+    print("data update:Complete")
+    with open("prog_data.json", 'w') as f:
+      json.dump(data, f, indent=2, ensure_ascii = False)
+    ticket_time = ticket_str[:2] + "/" + ticket_str[2:4] + "/" + ticket_str[4:6]
+    honban_time = honban_str[:2] + "/" + honban_str[2:4] + "/" + honban_str[4:6]
+    data[str(ctx.channel.id)]["status"].update({
+      "set_ticket": ticket_time,
+      "set_honban": honban_time#,
+      #"illust": "NO"
+    })
+    print("time conv:Complete")
+    delta_t1 = datetime.timedelta(days=6, hours=15)
+    delta_t2 = datetime.timedelta(days=2, hours=15)
+    delta_t3 = datetime.timedelta(hours=9)
+    delta_h1 = datetime.timedelta(days=13, hours=15)
+    delta_h2 = datetime.timedelta(days=6, hours=15)
+    delta_h3 = datetime.timedelta(days=5, hours=15)
+    delta_h4 = datetime.timedelta(hours=9)
+    delta_h5 = datetime.timedelta(hours=20, minutes=30)
+    delta_h6 = datetime.timedelta(days=1, hours=19)
+    delta_h7 = datetime.timedelta(days=4, hours=9)
+    delta_h8 = datetime.timedelta(days=5, hours=9)
+    #delta_i1 = datetime.timedelta(days=19, hours=12)
+    #delta_i2 = datetime.timedelta(days=29, hours=15)
+    s_format = '%y/%m/%d %H:%M'
+    s_format2 = '%y/%m/%d'
+    ticket_date = datetime.datetime.strptime(ticket_time, s_format2)
+    honban_date = datetime.datetime.strptime(honban_time, s_format2)
+    t1 = ticket_date - delta_t1
+    t2 = ticket_date - delta_t2
+    t3 = ticket_date + delta_t3
+    h1 = honban_date - delta_h1
+    h2 = honban_date - delta_h2
+    h3 = honban_date - delta_h3
+    h4 = honban_date + delta_h4
+    h5 = honban_date + delta_h5
+    h6 = honban_date + delta_h6
+    h7 = honban_date + delta_h7
+    h8 = honban_date + delta_h8
+    #i1 = honban_date - delta_i1
+    #i2 = honban_date - delta_i2
+    for i in range(1,4):
+      exec(f'data[str(ctx.channel.id)]["time"]["{str(kibo)}t{str(i)}"] = t{str(i)}.strftime(s_format)')
+    for i in range(1,9):
+      exec(f'data[str(ctx.channel.id)]["time"]["{str(kibo)}h{str(i)}"] = h{str(i)}.strftime(s_format)')
+    #data[str(ctx.channel.id)]["status"].update({"i1": i1.strftime(s_format)})
+    print("ata add:Complete")
+    with open(jdata, 'w') as f:
+      json.dump(data, f, indent=2, ensure_ascii = False)
+    status = data[str(ctx.channel.id)]["status"]
+    time = data[str(ctx.channel.id)]["time"]
+    if kibo == "m":
       desc = (
         f'チケット販売日：{status["set_ticket"]}'
         f'\n{time["mt1"]}　【チケット販売開始1週間前アナウンス】\n{time["mt2"]}　【チケット販売開始3日前アナウンス】\n{time["mt3"]}　【チケット販売開始当日アナウンス】'
@@ -155,126 +164,7 @@ class Schedule(commands.Cog, name = 'スケジュール'):
         f'\n{time["mh7"]}　【後日販売終了日アナウンス】\n{time["mh8"]}　【イベント終了告知】'
         #f'\n{status["i1"]}　【新規絵提出期限】\n{time["i2"]}　【新規絵提出リマインド】'
       )
-      embed = discord.Embed(
-        title = f"{role.name}　へお知らせ\n自分に通知：{jibun}",
-        description = desc,
-        color = discord.Colour.brand_green()
-      )
-    else:
-      embed = discord.Embed(
-        title = f"{role.name}　へお知らせ\n自分に通知：{jibun}",
-        description = f'エラーだよ。年月日は6桁の数字だよ！',
-        color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
-      )
-    await ctx.send(embed = embed, ephemeral = True)
-    debug_txt = f"デバッグ用。※納品物では表示されません"
-    #await ctx.send(debug_txt, embed=embed)
-
-  @commands.hybrid_command(name = "小規模イベント-謎解き-作成", aliases = ["小イベ", "small_event"])
-  @discord.app_commands.rename(
-    ticket = "チケット販売開始日",
-    honban = "イベント本番日",
-    role = "ロール",
-    jibun = "自分に通知"
-  )
-  async def set_small_event(
-    self, ctx: commands.Context,
-    ticket: str,
-    honban: str,
-    role: discord.Role,
-    jibun: typing.Literal["はい","いいえ"]
-  ):
-    """小規模イベント(謎解き)のリマインドを設定します。チャンネル毎に使い直してください
-    
-    Parameters
-    -----------
-    ticket
-      6桁の数字で入力（全半角混在可、スペース入り可。その他のノイズ文字は不可）
-    honban
-      6桁の数字で入力（全半角混在可、スペース入り可。その他のノイズ文字は不可）
-    role
-      通知先ロールをプルダウンで選択（1つのみ）
-    jibun
-      自分に通知するかしないかを選択
-    """
-    ticket_str = unicodedata.normalize('NFKC', ticket).replace(' ', '')
-    honban_str = unicodedata.normalize('NFKC', honban).replace(' ', '')
-    if jibun == "はい":
-      notic_to_me = True
-    else:
-      notic_to_me = False
-    if len(ticket_str) == len(honban_str) == 6:
-      with open("small-eve_data.json", 'r') as f:
-        data = json.load(f)
-      data.update({
-        str(ctx.channel.id): {
-          "role": role.id,
-          "guild": ctx.guild.id,
-          "user": ctx.author.id,
-          "notic_to_me": notic_to_me,
-          "time": {},
-          "status": {}
-        }
-      })
-      print("small-event data update:Complete")
-      ticket_time = ticket_str[:2] + "/" + ticket_str[2:4] + "/" + ticket_str[4:6]
-      honban_time = honban_str[:2] + "/" + honban_str[2:4] + "/" + honban_str[4:6]
-      data[str(ctx.channel.id)]["status"].update({
-        "set_ticket": ticket_time,
-        "set_honban": honban_time,
-        "illust": "NO"
-      })
-      print("time conv:Complete")
-      delta_t1 = datetime.timedelta(days=6, hours=15)
-      delta_t2 = datetime.timedelta(days=2, hours=15)
-      delta_t3 = datetime.timedelta(hours=9)
-      delta_h1 = datetime.timedelta(days=13, hours=15)
-      delta_h2 = datetime.timedelta(days=6, hours=15)
-      delta_h3 = datetime.timedelta(days=5, hours=15)
-      delta_h4 = datetime.timedelta(hours=9)
-      delta_h5 = datetime.timedelta(hours=20, minutes=30)
-      delta_h6 = datetime.timedelta(days=1, hours=19)
-      delta_h7 = datetime.timedelta(days=4, hours=9)
-      delta_h8 = datetime.timedelta(days=5, hours=9)
-      #delta_i1 = datetime.timedelta(days=19, hours=12)
-      #delta_i2 = datetime.timedelta(days=29, hours=15)
-      s_format = '%y/%m/%d %H:%M'
-      s_format2 = '%y/%m/%d'
-      ticket_date = datetime.datetime.strptime(ticket_time, s_format2)
-      honban_date = datetime.datetime.strptime(honban_time, s_format2)
-      t1 = ticket_date - delta_t1
-      t2 = ticket_date - delta_t2
-      t3 = ticket_date + delta_t3
-      h1 = honban_date - delta_h1
-      h2 = honban_date - delta_h2
-      h3 = honban_date - delta_h3
-      h4 = honban_date + delta_h4
-      h5 = honban_date + delta_h5
-      h6 = honban_date + delta_h6
-      h7 = honban_date + delta_h7
-      h8 = honban_date + delta_h8
-      #i1 = honban_date - delta_i1
-      #i2 = honban_date - delta_i2
-      data[str(ctx.channel.id)]["time"].update({
-        "st1": t1.strftime(s_format),
-        "st2": t2.strftime(s_format),
-        "st3": t3.strftime(s_format),
-        "sh1": h1.strftime(s_format),
-        "sh2": h2.strftime(s_format),
-        "sh3": h3.strftime(s_format),
-        "sh4": h4.strftime(s_format),
-        "sh5": h5.strftime(s_format),
-        "sh6": h6.strftime(s_format),
-        "sh7": h7.strftime(s_format),
-        "sh8": h8.strftime(s_format)#,
-        #"i2": i2.strftime(s_format)
-      })
-      #data[str(ctx.channel.id)]["status"].update({"i1": i1.strftime(s_format)})
-      print("data add:Complete")
-      with open("small-eve_data.json", 'w') as f:
-        json.dump(data, f, indent=2, ensure_ascii = False)
-      status = data[str(ctx.channel.id)]["status"]
-      time = data[str(ctx.channel.id)]["time"]
+    elif kibo == "s":
       desc = (
         f'チケット販売日：{status["set_ticket"]}'
         f'\n{time["st1"]}　【チケット販売開始1週間前アナウンス】\n{time["st2"]}　【チケット販売開始3日前アナウンス】\n{time["st3"]}　【チケット販売開始当日アナウンス】'
@@ -285,17 +175,11 @@ class Schedule(commands.Cog, name = 'スケジュール'):
         f'\n{time["sh7"]}　【後日販売終了日アナウンス】\n{time["sh8"]}　【イベント終了告知】'
         #f'\n{status["i1"]}　【新規絵提出期限】\n{time["i2"]}　【新規絵提出リマインド】'
       )
-      embed = discord.Embed(
-        title = f"{role.name}　へお知らせ\n自分に通知：{jibun}",
-        description = desc,
-        color = discord.Colour.brand_green()
-      )
-    else:
-      embed = discord.Embed(
-        title = f"{role.name}　へお知らせ\n自分に通知：{jibun}",
-        description = f'エラーだよ。年月日は6桁の数字だよ！',
-        color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
-      )
+    embed = discord.Embed(
+      title = f"{role.name}　へお知らせ\n自分に通知：{jibun}",
+      description = desc,
+      color = discord.Colour.brand_green()
+    )
     await ctx.send(embed = embed, ephemeral = True)
     debug_txt = f"デバッグ用。※納品物では表示されません"
     #await ctx.send(debug_txt, embed=embed)
@@ -339,9 +223,9 @@ class Schedule(commands.Cog, name = 'スケジュール'):
     memo
       自由文を入力
     """
-    with open("mid-eve_data.json", 'r') as f:
+    with open("prog_data.json", 'r') as f:
       data = json.load(f)
-    if str(ctx.channel.id) not in data:
+    if data == {} or str(ctx.channel.id) not in data:
       embed = discord.Embed(
         title = f"このチャンネルに進捗は無いよ！",
         color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
@@ -368,7 +252,7 @@ class Schedule(commands.Cog, name = 'スケジュール'):
       ctx.channel.id
     )].update(ch_data)
     print("data add:Complete")
-    with open("mid-eve_data.json", 'w') as f:
+    with open("data.json", 'w') as f:
       json.dump(data, f, indent=2, ensure_ascii = False)
     status = data[str(ctx.channel.id)]["status"]
     time = data[str(ctx.channel.id)]["time"]
@@ -420,7 +304,7 @@ class Schedule(commands.Cog, name = 'スケジュール'):
           "guild": ctx.guild.id,
           "user": ctx.author.id,
           "notic_to_me": True,
-          "date": rim_date
+          "time": rim_date
           }
       })
       print("final_meet update:Complete")
@@ -477,7 +361,7 @@ class Schedule(commands.Cog, name = 'スケジュール'):
         str(ctx.channel.id): {
           "guild": ctx.guild.id,
           "user": ctx.author.id,
-          "date": rim_date,
+          "time": rim_date,
           "memo": memo
           }
       })
@@ -499,138 +383,262 @@ class Schedule(commands.Cog, name = 'スケジュール'):
     debug_txt = f"デバッグ用。※納品物では表示されません"
     #await ctx.send(debug_txt, embed=embed)
   
-  @commands.hybrid_command(name = "リマインド日時確認", aliases = ["リマ", "remind"])
+  @commands.hybrid_command(name = "各種確認", aliases = ["確認", "conf"])
+  @discord.app_commands.rename(
+    item = "確認する項目"
+  )
   async def confirm_remind(
     self, ctx: commands.Context,
+    item: typing.Literal["リマインド日時確認", "進捗確認", "コマンド確認"]
     ):
-    """リマインド日時を確認します"""
-    with open("mid-eve_data.json", 'r') as f:
-      data = json.load(f)
-    if str(ctx.channel.id) not in data:
-      mid_embed = discord.Embed(
-        title = f"このチャンネルに中規模イベントのリマインドは無いよ！",
-        color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
-      )
-      mid_ch_user = ctx.author.id
-    else:
-      mid_ch_data = data[str(ctx.channel.id)]
-      GUILD_ID = mid_ch_data["guild"]
-      use_guild = self.bot.get_guild(GUILD_ID)
-      ROLE_ID = mid_ch_data["role"]
-      role = use_guild.get_role(ROLE_ID)
-      status = mid_ch_data["status"]
-      time = mid_ch_data["time"]
-      mid_ch_user = mid_ch_data["user"]
-      desc = (
-        f'**{role.name}　へお知らせ予定**\n'
-        f'チケット販売日：{status["set_ticket"]}'
-        f'\n{time["mt1"]}　【チケット販売開始1週間前アナウンス】\n{time["mt2"]}　【チケット販売開始3日前アナウンス】\n{time["mt3"]}　【チケット販売開始当日アナウンス】'
-        f'\n\nイベント本番日：{status["set_honban"]}'
-        f'\n{time["mh1"]}　【チケット販売終了1週間前アナウンス】\n{time["mh2"]}　【チケット販売終了日アナウンス】'
-        f'\n{time["mh3"]}　【最終打ち合わせについてのご連絡】\n{time["mh4"]}　【イベント本番！】'
-        f'\n{time["mh5"]}　【イベント後の流れ】\n{time["mh6"]}　【後日販売直前アナウンス】'
-        f'\n{time["mh7"]}　【後日販売終了日アナウンス】\n{time["mh8"]}　【イベント終了告知】'
-        #f'\n{status["i1"]}　【新規絵提出期限】\n{time["i2"]}　【新規絵提出リマインド】'
-      )
-      mid_embed = discord.Embed(
-        title = f"こちらは中規模イベント対象の演者様です",
-        description = desc,
-        color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
-      )
-    with open("small-eve_data.json", 'r') as f:
-      data = json.load(f)
-    if str(ctx.channel.id) not in data:
-      small_embed = discord.Embed(
-        title = f"このチャンネルに小規模（謎解き）イベントのリマインドは無いよ！",
-        color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
-      )
-      small_ch_user = ctx.author.id
-    else:
-      small_ch_data = data[str(ctx.channel.id)]
-      GUILD_ID = small_ch_data["guild"]
-      use_guild = self.bot.get_guild(GUILD_ID)
-      ROLE_ID = small_ch_data["role"]
-      role = use_guild.get_role(ROLE_ID)
-      status = small_ch_data["status"]
-      time = small_ch_data["time"]
-      small_ch_user = small_ch_data["user"]
-      desc = (
-        f'**{role.name}　へお知らせ予定**\n'
-        f'チケット販売日：{status["set_ticket"]}'
-        f'\n{time["st1"]}　【チケット販売開始1週間前アナウンス】\n{time["st2"]}　【チケット販売開始3日前アナウンス】\n{time["st3"]}　【チケット販売開始当日アナウンス】'
-        f'\n\nイベント本番日：{status["set_honban"]}'
-        f'\n{time["sh1"]}　【チケット販売終了1週間前アナウンス】\n{time["sh2"]}　【チケット販売終了日アナウンス】'
-        f'\n{time["sh3"]}　【最終打ち合わせについてのご連絡】\n{time["sh4"]}　【イベント本番！】'
-        f'\n{time["sh5"]}　【イベント後の流れ】\n{time["sh6"]}　【後日販売直前アナウンス】'
-        f'\n{time["sh7"]}　【後日販売終了日アナウンス】\n{time["sh8"]}　【イベント終了告知】'
-        #f'\n{status["i1"]}　【新規絵提出期限】\n{time["i2"]}　【新規絵提出リマインド】'
-      )
-      small_embed = discord.Embed(
-        title = f"こちらは小規模イベント対象の演者様です",
-        description = desc,
-        color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
-      )
-    if not mid_ch_user == ctx.author.id and not small_ch_user == ctx.author.id:
-      embed = discord.Embed(
-        title = "ごめんなさい！こちらのコマンドを使用することは出来ません🤖💦",
-        color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
-      )
-      return await ctx.send(embed = embed, ephemeral = True)
-    await ctx.send(embed = mid_embed, ephemeral = True)
-    await ctx.send(embed = small_embed, ephemeral = True)
-    debug_txt = f"デバッグ用。※納品物では表示されません"
-    #await ctx.send(debug_txt, embed = mid_embed)
-    #await ctx.send(debug_txt, embed = small_embed)
+    """各種項目を確認します
     
-  @commands.hybrid_command(name = "進捗確認", aliases = ["進捗かくにん", "progress_conf"])
-  async def confirm_progress(
-    self, ctx: commands.Context,
-    ):
-    """進捗を確認します"""
-    with open("mid-eve_data.json", 'r') as f:
-      data = json.load(f)
-    if str(ctx.channel.id) not in data:
+    Parameters
+    -----------
+    item
+      確認する項目をプルダウンで選択
+    """
+    debug_txt = f"デバッグ用。※納品物では表示されません"
+    if item == "リマインド日時確認":
       embed = discord.Embed(
-        title = "ごめんなさい！こちらのコマンドを使用することは出来ません🤖💦",
+        title = f"リマインド日時を表示します",
+        color = discord.Colour.brand_green()
+      )
+      with open("mid-eve_data.json", 'r') as f:
+        data = json.load(f)
+      if data == {} or str(ctx.channel.id) not in data:
+        embed.add_field(
+          name = "エラー",
+          value = f"このチャンネルに中規模イベントのリマインドは無いよ！"
+        )
+        #mid_ch_user = ctx.author.id
+      else:
+        mid_ch_data = data[str(ctx.channel.id)]
+        GUILD_ID = mid_ch_data["guild"]
+        use_guild = self.bot.get_guild(GUILD_ID)
+        ROLE_ID = mid_ch_data["role"]
+        role = use_guild.get_role(ROLE_ID)
+        status = mid_ch_data["status"]
+        time = mid_ch_data["time"]
+        #mid_ch_user = mid_ch_data["user"]
+        desc = (
+          f'**{role.name}　へお知らせ予定**\n'
+          f'チケット販売日：{status["set_ticket"]}'
+          f'\n{time["mt1"]}　【チケット販売開始1週間前アナウンス】\n{time["mt2"]}　【チケット販売開始3日前アナウンス】\n{time["mt3"]}　【チケット販売開始当日アナウンス】'
+          f'\n\nイベント本番日：{status["set_honban"]}'
+          f'\n{time["mh1"]}　【チケット販売終了1週間前アナウンス】\n{time["mh2"]}　【チケット販売終了日アナウンス】'
+          f'\n{time["mh3"]}　【最終打ち合わせについてのご連絡】\n{time["mh4"]}　【イベント本番！】'
+          f'\n{time["mh5"]}　【イベント後の流れ】\n{time["mh6"]}　【後日販売直前アナウンス】'
+          f'\n{time["mh7"]}　【後日販売終了日アナウンス】\n{time["mh8"]}　【イベント終了告知】'
+          #f'\n{status["i1"]}　【新規絵提出期限】\n{time["i2"]}　【新規絵提出リマインド】'
+        )
+        embed.add_field(
+          name = f"こちらは中規模イベント対象の演者様です",
+          value = desc, inline = False
+        )
+      with open("small-eve_data.json", 'r') as f:
+        data = json.load(f)
+      if data == {} or str(ctx.channel.id) not in data:
+        embed.add_field(
+          name = "エラー",
+          value = f"このチャンネルに小規模（謎解き）イベントのリマインドは無いよ！"
+        )
+        #small_ch_user = ctx.author.id
+      else:
+        small_ch_data = data[str(ctx.channel.id)]
+        GUILD_ID = small_ch_data["guild"]
+        use_guild = self.bot.get_guild(GUILD_ID)
+        ROLE_ID = small_ch_data["role"]
+        role = use_guild.get_role(ROLE_ID)
+        status = small_ch_data["status"]
+        time = small_ch_data["time"]
+        #small_ch_user = small_ch_data["user"]
+        desc = (
+          f'**{role.name}　へお知らせ予定**\n'
+          f'チケット販売日：{status["set_ticket"]}'
+          f'\n{time["st1"]}　【チケット販売開始1週間前アナウンス】\n{time["st2"]}　【チケット販売開始3日前アナウンス】\n{time["st3"]}　【チケット販売開始当日アナウンス】'
+          f'\n\nイベント本番日：{status["set_honban"]}'
+          f'\n{time["sh1"]}　【チケット販売終了1週間前アナウンス】\n{time["sh2"]}　【チケット販売終了日アナウンス】'
+          f'\n{time["sh3"]}　【最終打ち合わせについてのご連絡】\n{time["sh4"]}　【イベント本番！】'
+          f'\n{time["sh5"]}　【イベント後の流れ】\n{time["sh6"]}　【後日販売直前アナウンス】'
+          f'\n{time["sh7"]}　【後日販売終了日アナウンス】\n{time["sh8"]}　【イベント終了告知】'
+          #f'\n{status["i1"]}　【新規絵提出期限】\n{time["i2"]}　【新規絵提出リマインド】'
+        )
+        embed.add_field(
+          name = f"こちらは小規模イベント対象の演者様です",
+          value = desc, inline = False
+        )
+      with open("final_meet.json", 'r') as f:
+        data = json.load(f)
+      if data == {} or str(ctx.channel.id) not in data:
+        embed.add_field(
+          name = "エラー",
+          value = f"このチャンネルに最終打ち合わせ告知のリマインドは無いよ！"
+        )
+      else:
+        ch_data = data[str(ctx.channel.id)]
+        GUILD_ID = ch_data["guild"]
+        use_guild = self.bot.get_guild(GUILD_ID)
+        ROLE_ID = ch_data["role"]
+        role = use_guild.get_role(ROLE_ID)
+        time = ch_data["time"]
+        embed.add_field(
+          name = f"こちらは最終打ち合わせリマインド日時です",
+          value= f"{time}に　{role.name}　へお知らせ"
+        )
+      await ctx.send(embed = embed, ephemeral = True)
+      #await ctx.send(debug_txt, embed = embed)
+    elif item == "進捗確認":
+      with open("prog_data.json", 'r') as f:
+        data = json.load(f)
+      if data == {} or str(ctx.channel.id) not in data or data[str(ctx.channel.id)]["status"] == {}:
+        embed = discord.Embed(
+          title = f"このチャンネルに進捗の入力は無いよ！",
+          color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
+        )
+      else:
+        ch_data = data[str(ctx.channel.id)]
+        status = data[str(ctx.channel.id)]["status"]
+        time = data[str(ctx.channel.id)]["time"]
+        desc = (
+          f'チケット販売日：{status["set_ticket"]}\nイベント本番日：{status["set_honban"]}\n'
+          #f'\n{status["i1"]}　【新規絵提出期限】\n{time["i2"]}　【新規絵提出リマインド】'
+          f'\n【新規絵提出期限】{status["illust"]}\n【公演時間】{status["performance_time"]}'
+          f'\n【サムネイル製作】{status["thumbnail"]}\n【告知用画像製作】{status["announce"]}'
+          f'\n【ポスター製作】{status["poster"]}\n【グッズ製作】{status["merch"]}'
+          f'\n\n【メモ】\n{status["memo"]}'
+        )
+        embed = discord.Embed(
+          title = f"このチャンネルに設定された進捗状況",
+          description = desc,
+          color = discord.Colour.blue()
+        )
+      await ctx.send(embed = embed, ephemeral = True)
+      #await ctx.send(debug_txt, embed=embed)
+    elif item == "コマンド確認":
+      embed = discord.Embed(
+        title = f"入力されているすべてのコマンドを確認します",
         color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
       )
-      return await ctx.send(embed = embed, ephemeral = True)
-    ch_data = data[str(ctx.channel.id)]
-    status = data[str(ctx.channel.id)]["status"]
-    time = data[str(ctx.channel.id)]["time"]
-    desc = (
-      f'チケット販売日：{status["set_ticket"]}\nイベント本番日：{status["set_honban"]}\n'
-      #f'\n{status["i1"]}　【新規絵提出期限】\n{time["i2"]}　【新規絵提出リマインド】'
-      f'\n【新規絵提出期限】{status["illust"]}\n【公演時間】{status["performance_time"]}'
-      f'\n【サムネイル製作】{status["thumbnail"]}\n【告知用画像製作】{status["announce"]}'
-      f'\n【ポスター製作】{status["poster"]}\n【グッズ製作】{status["merch"]}'
-      f'\n\n【メモ】\n{status["memo"]}'
-    )
-    embed = discord.Embed(
-      title = f"このチャンネルに設定された進捗状況",
-      description = desc,
-      color = discord.Colour.blue()
-    )
-    await ctx.send(embed = embed, ephemeral = True)
-    debug_txt = f"デバッグ用。※納品物では表示されません"
-    #await ctx.send(debug_txt, embed=embed)
+      dt_now_jst = datetime.datetime.now(self.tz_jst)
+      s_format = '%y/%m/%d %H:%M'
+      now = datetime.datetime.strptime(dt_now_jst.strftime(s_format), s_format)
+      kari = {
+        "mid-eve": {},
+        "small-eve": {},
+        "final": {},
+        "free": {}
+      }
+      with open("mid-eve_data.json", 'r') as f:
+        data = json.load(f)
+      for i in data.values():
+        for k, v in i["time"].items():
+          dt = datetime.datetime.strptime(v, s_format)
+          if now < dt:
+            kari["mid-eve"][str(v)] = k
+            break
+      conf = ""
+      for k, v in kari["mid-eve"].items():
+        if v == "mt1": l = "チケット①"
+        if v == "mt2": l = "チケット②"
+        if v == "mt3": l = "チケット③"
+        if v == "mh1": l = "本番①"
+        if v == "mh2": l = "本番②"
+        if v == "mh3": l = "本番③"
+        if v == "mh4": l = "本番④"
+        if v == "mh5": l = "本番⑤"
+        if v == "mh6": l = "本番⑥"
+        if v == "mh7": l = "本番⑦"
+        if v == "mh8": l = "本番⑧"
+        conf += f"{l}: {k}\n"
+      embed.add_field(
+        name = f'中規模イベントリマインド：{len(kari["mid-eve"])}件',
+        value = conf
+      )
+      print("mid-eve success")
+      with open("small-eve_data.json", 'r') as f:
+        data = json.load(f)
+      for i in data.values():
+        for k, v in i["time"].items():
+          dt = datetime.datetime.strptime(v, s_format)
+          if now < dt:
+            kari["small-eve"][str(v)] = k
+            print(kari["small-eve"])
+            break
+      conf = ""
+      for k, v in kari["small-eve"].items():
+        if v == "st1": l = "チケット①"
+        if v == "st2": l = "チケット②"
+        if v == "st3": l = "チケット③"
+        if v == "sh1": l = "本番①"
+        if v == "sh2": l = "本番②"
+        if v == "sh3": l = "本番③"
+        if v == "sh4": l = "本番④"
+        if v == "sh5": l = "本番⑤"
+        if v == "sh6": l = "本番⑥"
+        if v == "sh7": l = "本番⑦"
+        if v == "sh8": l = "本番⑧"
+        conf += f"{l}: {k}\n"
+      embed.add_field(
+        name = f'小規模（謎解き）イベントリマインド：{len(kari["small-eve"])}件',
+        value = conf
+      )
+      print("small-eve success")
+      with open("final_meet.json", 'r') as f:
+        data = json.load(f)
+      for k, v in data.items():
+        time = v["time"]
+        dt = datetime.datetime.strptime(time, s_format)
+        if now < dt:
+          CHANNEL_ID = int(k)
+          channel = self.bot.get_channel(CHANNEL_ID)
+          GUILD_ID = v["guild"]
+          use_guild = self.bot.get_guild(GUILD_ID)
+          ROLE_ID = v["role"]
+          send_role = use_guild.get_role(ROLE_ID)
+          kari["final"][str(time)] = [channel.name, send_role.name]
+      conf = ""
+      for k, v in kari["final"].items():
+        conf += f"{v[0]}: {k} {v[1]}\n"
+      embed.add_field(
+        name = f'最終打ち合わせ告知リマインド：{len(kari["final"])}件',
+        value = conf
+      )
+      print("final-meet success")
+      with open("free_rem.json", 'r') as f:
+        data = json.load(f)
+      for v in data.values():
+        time = v["time"]
+        dt = datetime.datetime.strptime(time, s_format)
+        if now < dt:
+          kari["free"][str(time)] = v["memo"]
+          print(kari["free"])
+      conf = ""
+      for k, v in kari["free"].items():
+        conf += f"{k}: {v}\n"
+      print(conf)
+      embed.add_field(
+        name = f'フリーリマインド：{len(kari["free"])}件',
+        value = conf
+      )
+      print("free-rem success")
+      await ctx.send(embed = embed, ephemeral = True)
+      #await ctx.send(debug_txt, embed=embed)
   
   @tasks.loop(time=times)
   async def remind_check(self):
     dt_now_jst = datetime.datetime.now(self.tz_jst)
     now = dt_now_jst.strftime('%y/%m/%d %H:%M')
     print(now, "今")
-    #フリーリマインド処理開始
+    #フリーリマインドの処理開始
     with open("free_rem.json", 'r') as f:
-      free_rem = json.load(f)
-    for k, v in free_rem.items():
-      if now == v["date"]:
-        memo = free_rem[str(k)]["memo"]
-        #GUILD_ID = free_rem[str(k)]["guild"]
-        #use_guild = self.bot.get_guild(GUILD_ID)
+      data = json.load(f)
+    for k, v in data.items():
+      if now == v["time"]:
+        memo = v["memo"]
         CHANNEL_ID = int(k)
         channel = self.bot.get_channel(CHANNEL_ID)
-        USER_ID = free_rem[str(k)]["user"]
+        USER_ID = v["user"]
         print(USER_ID)
         user = self.bot.get_user(USER_ID)
         print(user)
@@ -646,92 +654,94 @@ class Schedule(commands.Cog, name = 'スケジュール'):
           #await channel.send(debug_txt, embed=embed)
         except NameError:
           print("フリーリマインド処理でエラー発生")
-    #最終打ち合わせ処理開始
+    #最終打ち合わせ告知の処理開始
     with open("final_meet.json", 'r') as f:
-      final_meet = json.load(f)
-    for k, v in final_meet.items():
-      if now == v["date"]:
+      data = json.load(f)
+    for k, v in data.items():
+      if now == v["time"]:
         with open(f'final_meet.txt', 'r', encoding="utf-8") as f:
           speech = f.read()
-        GUILD_ID = final_meet[str(k)]["guild"]
+        GUILD_ID = v["guild"]
         use_guild = self.bot.get_guild(GUILD_ID)
-        ROLE_ID = final_meet[str(k)]["role"]
+        ROLE_ID = v["role"]
         send_role = use_guild.get_role(ROLE_ID)
         CHANNEL_ID = int(k)
         channel = self.bot.get_channel(CHANNEL_ID)
-        USER_ID = final_meet[str(k)]["user"]
+        USER_ID = v["user"]
         user = use_guild.get_member(USER_ID)
         chat = f'{send_role.mention}{user.mention}\n{speech}'
         try:
           await channel.send(chat)
         except NameError:
           print("最終打ち合わせ処理でエラー発生")
-    #中規模イベントリマインド処理開始
+    #イベント：中規模リマインドの処理開始
     with open("mid-eve_data.json", 'r') as f:
       data = json.load(f)
     if data == {}:
-      return print(f'mid-eve_data.jsonが初期状態です。\n「/中規模イベント作成」を行ってください')
-    rim_time = {}
-    for k, v in data.items():
-      rim_time[k] = v["time"]
-    for k, v in rim_time.items():
-      for k2, v2 in v.items():
-        #if k2 == "i2":
-        #  if not data[str(k)]["status"]["illust"] == "NO":
-        #    print(f'イラスト：{data[str(k)]["status"]["illust"]}')
-        #    continue
-        if now == v2:
-          with open(f'{k2}.txt', 'r', encoding="utf-8") as f:
-            speech = f.read()
-          GUILD_ID = data[str(k)]["guild"]
-          use_guild = self.bot.get_guild(GUILD_ID)
-          ROLE_ID = data[str(k)]["role"]
-          send_role = use_guild.get_role(ROLE_ID)
-          CHANNEL_ID = int(k)
-          channel = self.bot.get_channel(CHANNEL_ID)
-          USER_ID = data[str(k)]["user"]
-          user = use_guild.get_member(USER_ID)
-          if data[str(k)]["notic_to_me"] == True:
-            chat = f'{send_role.mention}{user.mention}\n{speech}'
-          else:
-            chat = f'{send_role.mention}\n{speech}'
-          try:
-            await channel.send(chat)
-          except NameError:
-            print("中規模イベントリマインド処理でエラー発生")
-    #小規模イベント(謎解き)リマインド処理開始
+      print(f'mid-eve_data.jsonが初期状態です。\n「/イベント作成 中規模」を行ってください')
+    else:
+      rim_time = {}
+      for k, v in data.items():
+        rim_time[k] = v["time"]
+      for k, v in rim_time.items():
+        for k2, v2 in v.items():
+          #if k2 == "i2":
+          #  if not data[str(k)]["status"]["illust"] == "NO":
+          #    print(f'イラスト：{data[str(k)]["status"]["illust"]}')
+          #    continue
+          if now == v2:
+            with open(f'{k2}.txt', 'r', encoding="utf-8") as f:
+              speech = f.read()
+            GUILD_ID = data[str(k)]["guild"]
+            use_guild = self.bot.get_guild(GUILD_ID)
+            ROLE_ID = data[str(k)]["role"]
+            send_role = use_guild.get_role(ROLE_ID)
+            CHANNEL_ID = int(k)
+            channel = self.bot.get_channel(CHANNEL_ID)
+            USER_ID = data[str(k)]["user"]
+            user = use_guild.get_member(USER_ID)
+            if data[str(k)]["notic_to_me"] == True:
+              chat = f'{send_role.mention}{user.mention}\n{speech}'
+            else:
+              chat = f'{send_role.mention}\n{speech}'
+            try:
+              await channel.send(chat)
+            except NameError:
+              print("中規模イベントリマインド処理でエラー発生")
+    #イベント：小規模(謎解き)リマインドの処理開始
     with open("small-eve_data.json", 'r') as f:
       data = json.load(f)
     if data == {}:
-      return print(f'small-eve_data.jsonが初期状態です。\n「/小規模イベント(謎解き)作成」を行ってください')
-    rim_time = {}
-    for k, v in data.items():
-      rim_time[k] = v["time"]
-    for k, v in rim_time.items():
-      for k2, v2 in v.items():
-        #if k2 == "i2":
-        #  if not data[str(k)]["status"]["illust"] == "NO":
-        #    print(f'イラスト：{data[str(k)]["status"]["illust"]}')
-        #    continue
-        if now == v2:
-          with open(f'{k2}.txt', 'r', encoding="utf-8") as f:
-            speech = f.read()
-          GUILD_ID = data[str(k)]["guild"]
-          use_guild = self.bot.get_guild(GUILD_ID)
-          ROLE_ID = data[str(k)]["role"]
-          send_role = use_guild.get_role(ROLE_ID)
-          CHANNEL_ID = int(k)
-          channel = self.bot.get_channel(CHANNEL_ID)
-          USER_ID = data[str(k)]["user"]
-          user = use_guild.get_member(USER_ID)
-          if data[str(k)]["notic_to_me"] == True:
-            chat = f'{send_role.mention}{user.mention}\n{speech}'
-          else:
-            chat = f'{send_role.mention}\n{speech}'
-          try:
-            await channel.send(chat)
-          except NameError:
-            print("小規模イベントリマインド処理でエラー発生")
+      print(f'small-eve_data.jsonが初期状態です。\n「/イベント作成 小規模（謎解き）」を行ってください')
+    else:
+      rim_time = {}
+      for k, v in data.items():
+        rim_time[k] = v["time"]
+      for k, v in rim_time.items():
+        for k2, v2 in v.items():
+          #if k2 == "i2":
+          #  if not data[str(k)]["status"]["illust"] == "NO":
+          #    print(f'イラスト：{data[str(k)]["status"]["illust"]}')
+          #    continue
+          if now == v2:
+            with open(f'{k2}.txt', 'r', encoding="utf-8") as f:
+              speech = f.read()
+            GUILD_ID = data[str(k)]["guild"]
+            use_guild = self.bot.get_guild(GUILD_ID)
+            ROLE_ID = data[str(k)]["role"]
+            send_role = use_guild.get_role(ROLE_ID)
+            CHANNEL_ID = int(k)
+            channel = self.bot.get_channel(CHANNEL_ID)
+            USER_ID = data[str(k)]["user"]
+            user = use_guild.get_member(USER_ID)
+            if data[str(k)]["notic_to_me"] == True:
+              chat = f'{send_role.mention}{user.mention}\n{speech}'
+            else:
+              chat = f'{send_role.mention}\n{speech}'
+            try:
+              await channel.send(chat)
+            except NameError:
+              print("小規模イベントリマインド処理でエラー発生")
 
   @remind_check.before_loop
   async def before_remind_check(self):
