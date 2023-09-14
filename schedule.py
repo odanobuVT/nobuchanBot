@@ -148,7 +148,7 @@ class Schedule(commands.Cog, name = 'スケジュール'):
     for i in range(1,9):
       exec(f'data[str(ctx.channel.id)]["time"]["{str(kibo)}h{str(i)}"] = h{str(i)}.strftime(s_format)')
     #data[str(ctx.channel.id)]["status"].update({"i1": i1.strftime(s_format)})
-    print("ata add:Complete")
+    print("data add:Complete")
     with open(jdata, 'w') as f:
       json.dump(data, f, indent=2, ensure_ascii = False)
     status = data[str(ctx.channel.id)]["status"]
@@ -389,7 +389,7 @@ class Schedule(commands.Cog, name = 'スケジュール'):
   )
   async def confirm_remind(
     self, ctx: commands.Context,
-    item: typing.Literal["リマインド日時確認", "進捗確認", "コマンド確認"]
+    item: typing.Literal["リマインド日時確認", "進捗確認", "コマンド確認", "テンプレ確認"]
     ):
     """各種項目を確認します
     
@@ -518,72 +518,76 @@ class Schedule(commands.Cog, name = 'スケジュール'):
     elif item == "コマンド確認":
       embed = discord.Embed(
         title = f"入力されているすべてのコマンドを確認します",
-        color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
+        color = discord.Colour.purple()
       )
       dt_now_jst = datetime.datetime.now(self.tz_jst)
       s_format = '%y/%m/%d %H:%M'
       now = datetime.datetime.strptime(dt_now_jst.strftime(s_format), s_format)
-      kari = {
-        "mid-eve": {},
-        "small-eve": {},
-        "final": {},
-        "free": {}
-      }
+      eve = {}
       with open("mid-eve_data.json", 'r') as f:
         data = json.load(f)
-      for i in data.values():
-        for k, v in i["time"].items():
-          dt = datetime.datetime.strptime(v, s_format)
+      for k1, v1 in data.items():
+        for k2, v2 in v1["time"].items():
+          dt = datetime.datetime.strptime(v2, s_format)
           if now < dt:
-            kari["mid-eve"][str(v)] = k
+            CHANNEL_ID = int(k1)
+            channel = self.bot.get_channel(CHANNEL_ID)
+            ticket = data[str(k1)]["status"]["set_ticket"]
+            honban = data[str(k1)]["status"]["set_honban"]
+            eve[str(v2)] = [channel.name, ticket, honban, k2]
             break
       conf = ""
-      for k, v in kari["mid-eve"].items():
-        if v == "mt1": l = "チケット①"
-        if v == "mt2": l = "チケット②"
-        if v == "mt3": l = "チケット③"
-        if v == "mh1": l = "本番①"
-        if v == "mh2": l = "本番②"
-        if v == "mh3": l = "本番③"
-        if v == "mh4": l = "本番④"
-        if v == "mh5": l = "本番⑤"
-        if v == "mh6": l = "本番⑥"
-        if v == "mh7": l = "本番⑦"
-        if v == "mh8": l = "本番⑧"
-        conf += f"{l}: {k}\n"
+      for k, v in eve.items():
+        if v[3] == "mt1": l = "チケット①"
+        if v[3] == "mt2": l = "チケット②"
+        if v[3] == "mt3": l = "チケット③"
+        if v[3] == "mh1": l = "本番①"
+        if v[3] == "mh2": l = "本番②"
+        if v[3] == "mh3": l = "本番③"
+        if v[3] == "mh4": l = "本番④"
+        if v[3] == "mh5": l = "本番⑤"
+        if v[3] == "mh6": l = "本番⑥"
+        if v[3] == "mh7": l = "本番⑦"
+        if v[3] == "mh8": l = "本番⑧"
+        conf += f"**{v[0]}**\nチケット販売日 ⇒ {v[1]}\nイベント本番日 ⇒ {v[2]}\n次回リマインド ⇒ {k}▼{l}\n"
       embed.add_field(
-        name = f'中規模イベントリマインド：{len(kari["mid-eve"])}件',
+        name = f'中規模イベントリマインド：{len(eve)}件',
         value = conf
       )
       print("mid-eve success")
+      eve = {}
       with open("small-eve_data.json", 'r') as f:
         data = json.load(f)
-      for i in data.values():
-        for k, v in i["time"].items():
-          dt = datetime.datetime.strptime(v, s_format)
+      for k1, v1 in data.items():
+        for k2, v2 in v1["time"].items():
+          dt = datetime.datetime.strptime(v2, s_format)
           if now < dt:
-            kari["small-eve"][str(v)] = k
-            print(kari["small-eve"])
+            CHANNEL_ID = int(k1)
+            channel = self.bot.get_channel(CHANNEL_ID)
+            ticket = data[str(k1)]["status"]["set_ticket"]
+            honban = data[str(k1)]["status"]["set_honban"]
+            eve[str(v2)] = [channel.name, ticket, honban, k2]
             break
       conf = ""
-      for k, v in kari["small-eve"].items():
-        if v == "st1": l = "チケット①"
-        if v == "st2": l = "チケット②"
-        if v == "st3": l = "チケット③"
-        if v == "sh1": l = "本番①"
-        if v == "sh2": l = "本番②"
-        if v == "sh3": l = "本番③"
-        if v == "sh4": l = "本番④"
-        if v == "sh5": l = "本番⑤"
-        if v == "sh6": l = "本番⑥"
-        if v == "sh7": l = "本番⑦"
-        if v == "sh8": l = "本番⑧"
-        conf += f"{l}: {k}\n"
+      for k, v in eve.items():
+        if v[3] == "st1": l = "チケット①"
+        if v[3] == "st2": l = "チケット②"
+        if v[3] == "st3": l = "チケット③"
+        if v[3] == "sh1": l = "本番①"
+        if v[3] == "sh2": l = "本番②"
+        if v[3] == "sh3": l = "本番③"
+        if v[3] == "sh4": l = "本番④"
+        if v[3] == "sh5": l = "本番⑤"
+        if v[3] == "sh6": l = "本番⑥"
+        if v[3] == "sh7": l = "本番⑦"
+        if v[3] == "sh8": l = "本番⑧"
+        conf += f"**{v[0]}**\nチケット販売日 ⇒ {v[1]}\nイベント本番日 ⇒ {v[2]}\n次回リマインド ⇒ {k}▼{l}\n"
       embed.add_field(
-        name = f'小規模（謎解き）イベントリマインド：{len(kari["small-eve"])}件',
+        name = f'小規模（謎解き）イベントリマインド：{len(eve)}件',
         value = conf
       )
       print("small-eve success")
+      eve = {}
       with open("final_meet.json", 'r') as f:
         data = json.load(f)
       for k, v in data.items():
@@ -596,33 +600,64 @@ class Schedule(commands.Cog, name = 'スケジュール'):
           use_guild = self.bot.get_guild(GUILD_ID)
           ROLE_ID = v["role"]
           send_role = use_guild.get_role(ROLE_ID)
-          kari["final"][str(time)] = [channel.name, send_role.name]
+          eve[str(time)] = [channel.name, send_role.name]
       conf = ""
-      for k, v in kari["final"].items():
-        conf += f"{v[0]}: {k} {v[1]}\n"
+      for k, v in eve.items():
+        conf += f"{k}▼{v[0]}\n"
       embed.add_field(
-        name = f'最終打ち合わせ告知リマインド：{len(kari["final"])}件',
-        value = conf
+        name = f'最終打ち合わせ告知リマインド：{len(eve)}件',
+        value = conf, inline = False
       )
       print("final-meet success")
+      eve = {}
       with open("free_rem.json", 'r') as f:
         data = json.load(f)
       for v in data.values():
         time = v["time"]
         dt = datetime.datetime.strptime(time, s_format)
         if now < dt:
-          kari["free"][str(time)] = v["memo"]
-          print(kari["free"])
+          eve[str(time)] = v["memo"]
       conf = ""
-      for k, v in kari["free"].items():
-        conf += f"{k}: {v}\n"
-      print(conf)
+      for k, v in eve.items():
+        conf += f"{k}▼{v}\n"
       embed.add_field(
-        name = f'フリーリマインド：{len(kari["free"])}件',
-        value = conf
+        name = f'フリーリマインド：{len(eve)}件',
+        value = conf, inline = False
       )
       print("free-rem success")
       await ctx.send(embed = embed, ephemeral = True)
+      await ctx.send(debug_txt, embed=embed)
+    elif item == "テンプレ確認":
+      text = f"適用されているすべてのテンプレを確認します"
+      m_embed = discord.Embed(
+        title = f"中規模イベントのテンプレ",
+        color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
+      )
+      s_embed = discord.Embed(
+        title = f"小規模（謎解き）イベントのテンプレ",
+        color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
+      )
+      num_maru = ["⓪", "①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨"]
+      for kibo in ["m", "s"]:
+        for i in range(1,4):
+          with open(f"{kibo}t{str(i)}.txt", "r", encoding = "utf-8") as f:
+            temp = f.read()
+          exec(f'{kibo}_embed.add_field(name = "チケット{num_maru[i]}", value = temp)')
+        for i in range(1,9):
+          with open(f"{kibo}h{str(i)}.txt", "r", encoding = "utf-8") as f:
+            temp = f.read()
+          exec(f'{str(kibo)}_embed.add_field(name = "本番{num_maru[i]}", value = temp)')
+      with open(f"final_meet.txt", "r", encoding = "utf-8") as f:
+        temp = f.read()
+      final_embed = discord.Embed(
+        title = f"最終打ち合わせ告知のテンプレ",
+        description = temp,
+        color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
+      )
+      await ctx.send(text, ephemeral = True)
+      await ctx.send(embed = m_embed, ephemeral = True)
+      await ctx.send(embed = s_embed, ephemeral = True)
+      await ctx.send(embed = final_embed, ephemeral = True)
       #await ctx.send(debug_txt, embed=embed)
   
   @tasks.loop(time=times)
