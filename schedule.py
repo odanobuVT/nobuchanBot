@@ -16,6 +16,7 @@ times = [
   datetime.time(hour=12, tzinfo=tz_jst),
   datetime.time(hour=15, tzinfo=tz_jst),
   datetime.time(hour=18, tzinfo=tz_jst),
+  datetime.time(hour=19, tzinfo=tz_jst),
   datetime.time(hour=21, tzinfo=tz_jst),
   #datetime.time(hour=22, minute=1, tzinfo=tz_jst),
   datetime.time(hour=20, minute=30, tzinfo=tz_jst)
@@ -549,7 +550,7 @@ class Schedule(commands.Cog, name = 'スケジュール'):
         if v[3] == "mh6": l = "本番⑥"
         if v[3] == "mh7": l = "本番⑦"
         if v[3] == "mh8": l = "本番⑧"
-        conf += f"**{v[0]}**\nチケット販売日 ⇒ {v[1]}\nイベント本番日 ⇒ {v[2]}\n次回リマインド ⇒ {k}▼{l}\n"
+        conf += f"**{v[0]}**\n> チケット販売日 ⇒ {v[1]}\n> イベント本番日 ⇒ {v[2]}\n> 次回リマインド ⇒ {k}\n> ▼{l}\n\n"
       embed.add_field(
         name = f'中規模イベントリマインド：{len(eve)}件',
         value = conf
@@ -581,7 +582,7 @@ class Schedule(commands.Cog, name = 'スケジュール'):
         if v[3] == "sh6": l = "本番⑥"
         if v[3] == "sh7": l = "本番⑦"
         if v[3] == "sh8": l = "本番⑧"
-        conf += f"**{v[0]}**\nチケット販売日 ⇒ {v[1]}\nイベント本番日 ⇒ {v[2]}\n次回リマインド ⇒ {k}▼{l}\n"
+        conf += f"**{v[0]}**\n> チケット販売日 ⇒ {v[1]}\n> イベント本番日 ⇒ {v[2]}\n> 次回リマインド ⇒ {k}\n> ▼{l}\n\n"
       embed.add_field(
         name = f'小規模（謎解き）イベントリマインド：{len(eve)}件',
         value = conf
@@ -626,9 +627,10 @@ class Schedule(commands.Cog, name = 'スケジュール'):
       )
       print("free-rem success")
       await ctx.send(embed = embed, ephemeral = True)
-      await ctx.send(debug_txt, embed=embed)
+      #await ctx.send(debug_txt, embed=embed)
     elif item == "テンプレ確認":
       text = f"適用されているすべてのテンプレを確認します"
+      print(text)
       m_embed = discord.Embed(
         title = f"中規模イベントのテンプレ",
         color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
@@ -637,16 +639,17 @@ class Schedule(commands.Cog, name = 'スケジュール'):
         title = f"小規模（謎解き）イベントのテンプレ",
         color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
       )
+      print("embed Create success")
       num_maru = ["⓪", "①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨"]
       for kibo in ["m", "s"]:
         for i in range(1,4):
           with open(f"{kibo}t{str(i)}.txt", "r", encoding = "utf-8") as f:
             temp = f.read()
-          exec(f'{kibo}_embed.add_field(name = "チケット{num_maru[i]}", value = temp)')
+          exec(f'{kibo}_embed.add_field(name = "チケット{num_maru[i]}", value = temp, inline = False)')
         for i in range(1,9):
           with open(f"{kibo}h{str(i)}.txt", "r", encoding = "utf-8") as f:
             temp = f.read()
-          exec(f'{str(kibo)}_embed.add_field(name = "本番{num_maru[i]}", value = temp)')
+          exec(f'{kibo}_embed.add_field(name = "本番{num_maru[i]}", value = temp, inline = False)')
       with open(f"final_meet.txt", "r", encoding = "utf-8") as f:
         temp = f.read()
       final_embed = discord.Embed(
