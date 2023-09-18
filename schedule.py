@@ -533,8 +533,8 @@ class Schedule(commands.Cog, name = 'スケジュール'):
           if now < dt:
             CHANNEL_ID = int(k1)
             channel = self.bot.get_channel(CHANNEL_ID)
-            ticket = data[str(k1)]["status"]["set_ticket"]
-            honban = data[str(k1)]["status"]["set_honban"]
+            ticket = v1["status"]["set_ticket"]
+            honban = v1["status"]["set_honban"]
             eve[str(v2)] = [channel.name, ticket, honban, k2]
             break
       conf = ""
@@ -565,8 +565,8 @@ class Schedule(commands.Cog, name = 'スケジュール'):
           if now < dt:
             CHANNEL_ID = int(k1)
             channel = self.bot.get_channel(CHANNEL_ID)
-            ticket = data[str(k1)]["status"]["set_ticket"]
-            honban = data[str(k1)]["status"]["set_honban"]
+            ticket = v1["status"]["set_ticket"]
+            honban = v1["status"]["set_honban"]
             eve[str(v2)] = [channel.name, ticket, honban, k2]
             break
       conf = ""
@@ -584,7 +584,7 @@ class Schedule(commands.Cog, name = 'スケジュール'):
         if v[3] == "sh8": l = "本番⑧"
         conf += f"**{v[0]}**\n> チケット販売日 ⇒ {v[1]}\n> イベント本番日 ⇒ {v[2]}\n> 次回リマインド ⇒ {k}\n> ▼{l}\n\n"
       embed.add_field(
-        name = f'小規模（謎解き）イベントリマインド：{len(eve)}件',
+        name = f'小規模イベントリマインド：{len(eve)}件',
         value = conf
       )
       print("small-eve success")
@@ -636,7 +636,7 @@ class Schedule(commands.Cog, name = 'スケジュール'):
         color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
       )
       s_embed = discord.Embed(
-        title = f"小規模ベントのテンプレ",
+        title = f"小規模（謎解き）イベントのテンプレ",
         color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
       )
       #print("embed Create success")
@@ -722,27 +722,24 @@ class Schedule(commands.Cog, name = 'スケジュール'):
     if data == {}:
       print(f'mid-eve_data.jsonが初期状態です。\n「/イベント作成 中規模」を行ってください')
     else:
-      rim_time = {}
       for k, v in data.items():
-        rim_time[k] = v["time"]
-      for k, v in rim_time.items():
-        for k2, v2 in v.items():
+        for k2, v2 in v["time"].items():
           #if k2 == "i2":
-          #  if not data[str(k)]["status"]["illust"] == "NO":
-          #    print(f'イラスト：{data[str(k)]["status"]["illust"]}')
+          #  if not v["status"]["illust"] == "NO":
+          #    print(f'イラスト：{v["status"]["illust"]}')
           #    continue
           if now == v2:
             with open(f'{k2}.txt', 'r', encoding="utf-8") as f:
               speech = f.read()
-            GUILD_ID = data[str(k)]["guild"]
+            GUILD_ID = v["guild"]
             use_guild = self.bot.get_guild(GUILD_ID)
-            ROLE_ID = data[str(k)]["role"]
+            ROLE_ID = v["role"]
             send_role = use_guild.get_role(ROLE_ID)
             CHANNEL_ID = int(k)
             channel = self.bot.get_channel(CHANNEL_ID)
-            USER_ID = data[str(k)]["user"]
+            USER_ID = v["user"]
             user = use_guild.get_member(USER_ID)
-            if data[str(k)]["notic_to_me"] == True:
+            if v["notic_to_me"] == True:
               chat = f'{send_role.mention}{user.mention}\n{speech}'
             else:
               chat = f'{send_role.mention}\n{speech}'
@@ -756,27 +753,24 @@ class Schedule(commands.Cog, name = 'スケジュール'):
     if data == {}:
       print(f'small-eve_data.jsonが初期状態です。\n「/イベント作成 小規模（謎解き）」を行ってください')
     else:
-      rim_time = {}
       for k, v in data.items():
-        rim_time[k] = v["time"]
-      for k, v in rim_time.items():
-        for k2, v2 in v.items():
+        for k2, v2 in v["time"].items():
           #if k2 == "i2":
-          #  if not data[str(k)]["status"]["illust"] == "NO":
-          #    print(f'イラスト：{data[str(k)]["status"]["illust"]}')
+          #  if not v["status"]["illust"] == "NO":
+          #    print(f'イラスト：{v["status"]["illust"]}')
           #    continue
           if now == v2:
             with open(f'{k2}.txt', 'r', encoding="utf-8") as f:
               speech = f.read()
-            GUILD_ID = data[str(k)]["guild"]
+            GUILD_ID = v["guild"]
             use_guild = self.bot.get_guild(GUILD_ID)
-            ROLE_ID = data[str(k)]["role"]
+            ROLE_ID = v["role"]
             send_role = use_guild.get_role(ROLE_ID)
             CHANNEL_ID = int(k)
             channel = self.bot.get_channel(CHANNEL_ID)
-            USER_ID = data[str(k)]["user"]
+            USER_ID = v["user"]
             user = use_guild.get_member(USER_ID)
-            if data[str(k)]["notic_to_me"] == True:
+            if v["notic_to_me"] == True:
               chat = f'{send_role.mention}{user.mention}\n{speech}'
             else:
               chat = f'{send_role.mention}\n{speech}'
