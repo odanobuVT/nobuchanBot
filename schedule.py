@@ -123,8 +123,8 @@ class Schedule(commands.Cog, name = 'スケジュール'):
     delta_h4 = datetime.timedelta(hours=9)
     delta_h5 = datetime.timedelta(hours=20, minutes=30)
     delta_h6 = datetime.timedelta(days=1, hours=19)
-    delta_h7 = datetime.timedelta(days=7, hours=9)
-    delta_h8 = datetime.timedelta(days=8, hours=9)
+    delta_h7 = datetime.timedelta(days=4, hours=9)
+    delta_h8 = datetime.timedelta(days=5, hours=9)
     #delta_i1 = datetime.timedelta(days=19, hours=12)
     #delta_i2 = datetime.timedelta(days=29, hours=15)
     s_format = '%y/%m/%d %H:%M'
@@ -390,7 +390,7 @@ class Schedule(commands.Cog, name = 'スケジュール'):
   )
   async def confirm_remind(
     self, ctx: commands.Context,
-    item: typing.Literal["リマインド日時確認", "進捗確認", "コマンド確認"]#, "テンプレ確認"]
+    item: typing.Literal["リマインド日時確認", "進捗確認", "コマンド確認", "テンプレ確認"]
     ):
     """各種項目を確認します
     
